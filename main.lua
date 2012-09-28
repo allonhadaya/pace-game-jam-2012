@@ -12,7 +12,7 @@ function love.load()
 	local rightPitAnlge = -1 * leftPitAngle
 
 	p.setMeter(64)
-	world = p.newWorld(0, 9.81*64, true)
+	world = p.newWorld(0, 9.815*64, true)
 	
 	objects = {}
 	
