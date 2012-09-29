@@ -16,8 +16,8 @@ end
 function init(self)
 	
 	index = index + 1
-
-	self.body = p.newBody(world, math.random() * w, initialY, "dynamic")
+	
+	self.body = p.newBody(world, randomInitialX(), initialY, "dynamic")
 	self.shape = p.newCircleShape(radius)
 	self.color = math.random(2) - 1
 	self.lost = false
@@ -33,6 +33,10 @@ function init(self)
 	return self
 end
 
+function randomInitialX()
+	return (w * (6 * math.random() + 1)) / 8
+end
+
 function draw(self)
 	if not self.lost then
 		local c = 255 * self.color
@@ -43,7 +47,7 @@ end
 
 function resolveCollision(self, other, winRound, loseRound)
 	if not self.touched and self.index == index then
-		if other.type == "triangle" and self.color ~= other.color then
+		if other.type == "triangle" and self.color == other.color then
 			loseRound()
 			self.touched = true
 			self.lost = true
