@@ -1,15 +1,20 @@
-w = 400
-h = 800
 p = love.physics
 g = love.graphics
+
+w = 400
+h = 800
+
+lives = 10
 points = 0
+
+currentBall = {}
 
 function love.load()
 	
 	g.setBackgroundColor(160, 160, 160)
 	p.setMeter(64)	
-	world = p.newWorld(0, 9.815*64, true)
-	world:setCallbacks(beginContact, endContact, preSolve, postSolve)
+	world = p.newWorld(0, 5*64, true)
+	world:setCallbacks(beginContact, nil, nil, nil)
 	
 	local bodyRatio = 0.9
 	pitTop = h * bodyRatio
@@ -33,11 +38,11 @@ function love.load()
 	objects.walls.leftTopFixture = p.newFixture(objects.walls.body, objects.walls.leftTopShape)
 	objects.walls.leftBottomFixture = p.newFixture(objects.walls.body, objects.walls.leftBottomShape)
 	
-	objects.walls.topFixture:setUserData({ type = "wall", value = "top"})
-	objects.walls.rightTopFixture:setUserData({ type = "wall", value = "right-top"})
-	objects.walls.rightBottomFixture:setUserData({ type = "bottom-wall", value = "right-bottom"})
-	objects.walls.leftBottomFixture:setUserData({ type = "bottom-wall", value = "left-bottom"})
-	objects.walls.leftTopFixture:setUserData({ type = "wall", value = "left-top"})
+	objects.walls.topFixture:setUserData({ touched = false, type = "wall", value = "top"})
+	objects.walls.rightTopFixture:setUserData({ touched = false, type = "wall", value = "right-top"})
+	objects.walls.rightBottomFixture:setUserData({ touched = false, type = "bottom-wall", value = "right-bottom"})
+	objects.walls.leftBottomFixture:setUserData({ touched = false, type = "bottom-wall", value = "left-bottom"})
+	objects.walls.leftTopFixture:setUserData({ touched = false, type = "wall", value = "left-top"})
 	
 	-- balls
 	
@@ -47,7 +52,7 @@ function love.load()
 	
 	objects.triangles = {}
 	
-	local triangleOffset = 60
+	local triangleOffset = 120
 	local rowSpacing = 90
 	for i = 1, 5, 2 do
 		local h1 = rowSpacing * (i - 1) + triangleOffset
@@ -66,16 +71,48 @@ function love.load()
 	startGame()
 end
 
-function makeBall(x, y)
-	local ball = {}
+function beginContact(a, b, coll)
+
+	local aUntouched = not a:getUserData().touched
+	local bUntouched = not b:getUserData().touched
 	
-	ball.body = p.newBody(world, x, y, "dynamic")
-	ball.shape = p.newCircleShape(10)
-	ball.fixture = p.newFixture(ball.body, ball.shape, 1)
-	ball.fixture:setUserData({ type = "ball", value = table.getn(objects.balls) + 1 })
-	ball.fixture:setRestitution(0.5)
+	if a == currentBall.fixture and aUntouched then
+		resolveBallContact(a, b)
+	elseif b == currentBall.fixture and bUntouched then
+		resolveBallContact(b, a)
+	end
+end
+
+function resolveBallContact(ball, other)
+	local otherData = other:getUserData()
 	
-	return ball
+	if otherData.type == "triangle" and objects.triangles[otherData.value].color ~= currentBall.color then
+		loseGame()
+		touchFixture(ball)
+	elseif otherData.type == "bottom-wall" then
+		gainPoint()
+		touchFixture(ball)
+	end
+end
+
+function loseGame()
+	currentBall.body:destroy()
+	currentBall.lost = true
+	lives = lives - 1
+	print("Lives Left: " .. lives)
+	
+	startGame()
+end
+
+function gainPoint()
+	points = points + 1
+	print("Points: " .. points)
+end
+
+function touchFixture(fixture)
+	local newUserData = fixture:getUserData()
+	newUserData.touched = true
+	fixture:setUserData(newUserData)
 end
 
 function makeTriangle(x, y)
@@ -93,49 +130,49 @@ function makeTriangle(x, y)
 		x - horizontalOffset, y + verticalOffset)
 		
 	triangle.fixture = p.newFixture(triangle.body, triangle.shape)
-	triangle.fixture:setUserData({ type = "triangle", value = table.getn(objects.triangles) + 1 })
+	triangle.fixture:setUserData({ touched = false, type = "triangle", value = table.getn(objects.triangles) + 1 })
 	
 	return triangle
 end
 
-function beginContact(a, b, coll)
-	d = a:getUserData()
-	if d.type == "triangle" then
-		if (objects.triangles[d.value].color ~= ballColor) then
-			loseGame()
-		end
-	elseif d.type == "bottom-wall" then
-		gainPoint()
+function startGame()
+	
+	if lives <= 0 then
+		return;
+	end
+	
+	currentBall = makeBall(math.random() * w, 50)
+	
+	table.insert(objects.balls, currentBall)
+	
+	for k, v in pairs(objects.triangles) do
+		v.color = math.random(2) - 1
 	end
 end
 
-function endContact(a, b, coll)
-    
-end
-
-function preSolve(a, b, coll)
-    
-end
-
-function postSolve(a, b, coll)
-    
+function makeBall(x, y)
+	local ball = {}
+	
+	ball.body = p.newBody(world, x, y, "dynamic")
+	ball.shape = p.newCircleShape(10)
+	ball.fixture = p.newFixture(ball.body, ball.shape, 1)
+	ball.fixture:setUserData({ touched = false, type = "ball", value = table.getn(objects.balls) + 1 })
+	ball.fixture:setRestitution(0.5)
+	ball.color = math.random(2) - 1
+	ball.lost = false
+	
+	return ball
 end
 
 function love.update(dt)
 	world:update(dt)
 	
 	if love.keyboard.isDown("right") then
-		objects.ball.body:applyForce(400, 0)
+		currentBall.body:applyForce(400, 0)
 	elseif love.keyboard.isDown("left") then
-		objects.ball.body:applyForce(-400, 0)
+		currentBall.body:applyForce(-400, 0)
 	elseif love.keyboard.isDown("up") then
-		objects.ball.body:applyForce(0, -400)
-	end
-end
-
-function love.keypressed(key)
-	if (key == "down") then
-		startGame()
+		currentBall.body:applyForce(0, -400)
 	end
 end
 
@@ -152,32 +189,14 @@ function love.draw()
 	-- draw ball
 	
 	for k, v in pairs(objects.balls) do
-		g.setColor(255 * v.color, 255 * v.color, 255 * v.color)
-		g.circle("fill", v.body:getX(), v.body:getY(), v.shape:getRadius())
+		if not v.lost then
+			g.setColor(255 * v.color, 255 * v.color, 255 * v.color)
+			g.circle("fill", v.body:getX(), v.body:getY(), v.shape:getRadius())
+		end
 	end
 	
 	for k, t in pairs(objects.triangles) do
 		g.setColor(255 * t.color, 255 * t.color, 255 * t.color)
 		g.polygon("fill", t.body:getWorldPoints(t.shape:getPoints()))
 	end
-end
-
-function startGame()
-	local ball = makeBall(math.random() * w, 50)
-	ball.color = math.random(2) - 1
-	
-	table.insert(objects.balls, ball)
-	
-	for k, v in pairs(objects.triangles) do
-		v.color = math.random(2) - 1
-	end
-end
-
-function loseGame()
-	print("YOU LOOSE")
-end
-
-function gainPoint()
-	points = points + 1
-	print(points)
 end
