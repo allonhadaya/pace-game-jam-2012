@@ -2,7 +2,10 @@ require "triangle"
 require "ball"
 require "wall"
 
-lives = 10
+initialLives = 10
+winScore = 3
+
+lives = initialLives
 points = 0
 
 world = nil
@@ -21,7 +24,7 @@ function love.load()
 
 	g.setBackgroundColor(160, 160, 160)
 	p.setMeter(64)	
-	world = p.newWorld(0, 5*64, true)
+	world = p.newWorld(0, 3*64, true)
 	world:setCallbacks(beginContact, nil, nil, nil)
 	
 	objects = {
@@ -93,27 +96,35 @@ function buildTriangles()
 end
 
 function love.mousepressed(x, y, button)
-	if start == false then
-		for k, v in pairs(objects.triangles) do
-			if (v:isClicked(x, y)) then
-				v:flipColor()
-			end
+	for k, v in pairs(objects.triangles) do
+		if (v:isClicked(x, y)) then
+			v:flipColor()
 		end
 	end
+end
+
+function love.keypressed(key)
+   if key == " " or key == "return" then
+      newGame()
+   end
 end
 
 function love.update(dt)
 	world:update(dt)
 	
+	destroyLooseBalls()
+	
+	if start and not hasWon() then
+		initializeRound()
+	end
+end
+
+function destroyLooseBalls()
 	for k, v in pairs(objects.balls) do
 		if not v.destroyed and v.lost then
 			v.body:destroy()
 			v.destroyed = true
 		end
-	end
-	
-	if start then
-		initializeRound()
 	end
 end
 
@@ -143,4 +154,29 @@ function love.draw()
 	for k, v in pairs(objects.triangles) do
 		v:draw()
 	end
+	
+	g.setColor(160, 160, 160)
+	local margin  = (h - pitTop) * .333
+	g.print("Lives -- " .. tostring(lives), margin - 10, h - margin)
+	
+	g.setColor(255, 255, 255)
+	
+	if hasWon() then
+		g.print("Hooray!", margin, margin)
+	elseif lives == 0 then
+		g.print("Have you tried crying?", margin, margin * 2)
+	end
+end
+
+function hasWon()
+	return points > winScore
+end
+
+function newGame()
+	for k, v in pairs(objects.balls) do
+		v.lost = true
+	end
+	lives = initialLives
+	points = 0
+	startGame()
 end

@@ -2,7 +2,7 @@ module("ball", package.seeall)
 
 local initialY
 local radius = 10
-local restitution = 0.5
+local restitution = 0.6
 
 local index = 0
 
