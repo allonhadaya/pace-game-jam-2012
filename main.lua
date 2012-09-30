@@ -3,7 +3,6 @@ require "ball"
 require "wall"
 
 initialLives = 10
-winScore = 3
 
 lives = initialLives
 points = 0
@@ -17,6 +16,7 @@ bodyRatio = 0.9
 w = 400
 h = 800
 pitTop = h * bodyRatio
+margin  = 20
 
 local currentBall = {}
 
@@ -113,18 +113,12 @@ function love.mousepressed(x, y, button)
 	end
 end
 
-function love.keypressed(key)
-   if key == " " or key == "return" then
-      newGame()
-   end
-end
-
 function love.update(dt)
 	world:update(dt)
 	
 	destroyLooseBalls()
 	
-	if start and not hasWon() then
+	if start then
 		initializeRound()
 	end
 end
@@ -165,21 +159,21 @@ function love.draw()
 		v:draw()
 	end
 	
-	g.setColor(160, 160, 160)
-	local margin  = (h - pitTop) * .333
-	g.print("Lives -- " .. tostring(lives), margin - 10, h - margin)
-	
 	g.setColor(255, 255, 255)
 	
-	if hasWon() then
-		g.print("Hooray!", margin, margin)
-	elseif lives == 0 then
-		g.print("Have you tried crying?", margin, margin * 2)
+	local message = "Points -- " .. tostring(points) .. "\nLives -- " .. tostring(lives) 
+	
+	if lives == 0 then
+		message = message .. "\n\nGame Over (space to restart)"
 	end
+	
+	g.print(message, margin, margin)
 end
 
-function hasWon()
-	return points > winScore
+function love.keypressed(key)
+   if key == " " then
+      newGame()
+   end
 end
 
 function newGame()
