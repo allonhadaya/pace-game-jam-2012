@@ -42,7 +42,6 @@ end
 
 function winRound()
 	points = points + sameColorTriangles()
-	print("Points: " .. points)
 	startGame()
 end
 
@@ -58,7 +57,6 @@ end
 
 function loseRound()
 	lives = lives - 1
-	print("Lives Left: " .. lives)
 	startGame()
 end
 
