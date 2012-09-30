@@ -3,6 +3,7 @@ module("triangle", package.seeall)
 local triangleSide = 40
 local hOffset = triangleSide / 2
 local vOffset = hOffset * math.pow(3, 0.5)
+local clickRadius = math.pow(math.pow(hOffset - 0, 2) + math.pow(vOffset - hOffset, 2), 0.5)
 
 local index = 1
 
@@ -48,9 +49,14 @@ function flipColor(self)
 end
 
 function isClicked(self, x, y)
-	return math.pow(math.pow(y - self.y, 2) + math.pow(x - self.x, 2), 0.5) < triangleSide
+	return distance(x, y, self.x, self.y + hOffset) < clickRadius
 end
 
 function resolveCollision(self, other, winRound, loseRound)
 	other:resolveCollision(self, winRound, loseRound)
 end
+
+function distance(x1, y1, x2, y2)
+	return math.pow(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2), 0.5)
+end
+
