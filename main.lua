@@ -41,9 +41,19 @@ function beginContact(a, b, coll)
 end
 
 function winRound()
-	points = points + 1
+	points = points + sameColorTriangles()
 	print("Points: " .. points)
 	startGame()
+end
+
+function sameColorTriangles()
+	local result = 0
+	for k, v in pairs(objects.triangles) do
+		if v.color == currentBall.color then
+			result = result + 1
+		end
+	end
+	return result
 end
 
 function loseRound()
