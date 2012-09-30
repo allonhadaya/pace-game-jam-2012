@@ -1,6 +1,6 @@
 module("ball", package.seeall)
 
-local initialY
+local initialY = 60
 local radius = 10
 local restitution = 0.6
 
@@ -47,7 +47,7 @@ end
 
 function resolveCollision(self, other, winRound, loseRound)
 	if not self.touched and self.index == index then
-		if other.type == "triangle" and self.color == other.color then
+		if other.type == "triangle" and self.color ~= other.color then
 			loseRound()
 			self.touched = true
 			self.lost = true
